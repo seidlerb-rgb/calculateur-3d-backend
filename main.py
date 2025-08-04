@@ -7,6 +7,8 @@ import os
 
 logging.basicConfig(level=logging.INFO)
 
+print(f"pymeshlab version : {pymeshlab.__version__}")
+
 app = FastAPI()
 
 app.add_middleware(
