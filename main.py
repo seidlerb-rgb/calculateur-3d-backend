@@ -8,7 +8,7 @@ import pymeshlab
 
 logging.basicConfig(level=logging.INFO)
 
-print(f"pymeshlab version : {pymeshlab.__version__}")
+print("pymeshlab est installé")  # simple test
 
 app = FastAPI()
 
@@ -22,23 +22,30 @@ app.add_middleware(
 
 @app.post("/upload")
 async def upload_file(file: UploadFile = File(...)):
-    try:
-        logging.info(f"Upload reçu : {file.filename}")
+    if not file.filename.lower().endswith((".stl", ".step", ".stp")):
+        return {"error": "Fichier non supporté"}
 
-        if not file.filename.lower().endswith((".stl", ".step", ".stp")):
-            return JSONResponse(status_code=400, content={"error": "Fichier non supporté"})
+    with tempfile.TemporaryDirectory() as tmpdir:
+        filepath = os.path.join(tmpdir, file.filename)
+        with open(filepath, "wb") as f:
+            f.write(await file.read())
 
-        with tempfile.TemporaryDirectory() as tmpdir:
-            logging.info(f"Dossier temporaire créé : {tmpdir}")
-            filepath = os.path.join(tmpdir, file.filename)
-            logging.info(f"Chemin fichier temporaire : {filepath}")
+        ms = pymeshlab.MeshSet()
+        try:
+            ms.load_new_mesh(filepath)
+        except Exception as e:
+            return {"error": f"Échec du chargement du fichier dans MeshLab: {str(e)}"}
 
-            with open(filepath, "wb") as f:
-                content = await file.read()
-                f.write(content)
-                logging.info(f"Fichier écrit en local, taille : {len(content)} octets")
+        volume = ms.get_geometric_measures().mesh_volume
+        surface = ms.get_geometric_measures().surface_area
 
-        return {"message": "Fichier reçu et enregistré temporairement"}
-    except Exception as e:
-        logging.error(f"Erreur serveur inattendue : {e}", exc_info=True)
-        return JSONResponse(status_code=500, content={"error": "Erreur serveur inattendue", "details": str(e)})
+        prix_base = 10.0
+        prix_volume = volume * 0.12
+        prix_surface = surface * 0.05
+        total = round(prix_base + prix_volume + prix_surface, 2)
+
+        return {
+            "volume": round(volume, 2),
+            "surface": round(surface, 2),
+            "prix": total
+        }
