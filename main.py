@@ -4,6 +4,7 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 import tempfile
 import os
+import pymeshlab
 
 logging.basicConfig(level=logging.INFO)
 
