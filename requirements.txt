@@ -1,0 +1,4 @@
+fastapi
+uvicorn
+pymeshlab
+python-multipart
