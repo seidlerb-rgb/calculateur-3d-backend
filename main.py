@@ -1,20 +1,14 @@
-import logging
 from fastapi import FastAPI, UploadFile, File
-from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 import tempfile
 import os
 import pymeshlab
 
-logging.basicConfig(level=logging.INFO)
-
-print("pymeshlab est installé")  # simple test
-
 app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://www.3dhack.ch"],  # ou ["*"] pour tests
+    allow_origins=["https://www.3dhack.ch"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -36,8 +30,9 @@ async def upload_file(file: UploadFile = File(...)):
         except Exception as e:
             return {"error": f"Échec du chargement du fichier dans MeshLab: {str(e)}"}
 
-        volume = ms.get_geometric_measures().mesh_volume
-        surface = ms.get_geometric_measures().surface_area
+        measures = ms.get_geometric_measures()
+        volume = measures.get("mesh_volume", 0)
+        surface = measures.get("surface_area", 0)
 
         prix_base = 10.0
         prix_volume = volume * 0.12
